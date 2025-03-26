@@ -1,227 +1,129 @@
-Okay, acting as a Financial Data Scientist, let's dive into analyzing this risk data using Power BI concepts. The goal is to demonstrate data handling, calculations, and advanced visualizations without writing explicit DAX queries, focusing on the *logic* and *application* within the Power BI environment.
+Okay, acting as a Financial Data Scientist, let's break down how we can perform an in-depth analysis of this risk review data in Power BI, focusing on advanced techniques and visualizations without using explicit DAX queries. We'll leverage Power Query for data handling and Power BI's visual capabilities.
 
-**Assumptions:**
+Data Understanding:
 
-1.  The provided data is a small sample of a larger dataset. The analysis steps assume a richer dataset for meaningful insights.
-2.  The data is loaded into Power BI Desktop.
-3.  We are focusing on the "how-to" and "why" within Power BI's interface and capabilities, not the specific DAX syntax.
+First, let's understand the variables provided:
 
-**Step-by-Step Analysis Plan:**
+LOD Team: Line of Defense Team (e.g., L2C - likely Second Line Control). Categorical. Represents the team performing or overseeing the review.
+Quarter: Time period of the review (e.g., 2025 Q1). Temporal.
+Review_Name: Specific name or type of the review conducted (e.g., HR Accounting & IFRS 2). Categorical.
+L3risks: Granular description of the identified risk (e.g., "Breach of regulatory..."). Textual/Categorical. This seems to be the most specific risk level.
+Legal Entities: Identifier related to the legal entity structure (e.g., SG, HONG KONG, INDIA, etc.). Potentially geographic or organizational. Needs clarification if 'SG' and 'SINGAPOUR' refer to the same entity - assuming they are distinct as per the "clean data" instruction, but noting this.
+L2Risks: A higher-level risk category (e.g., "Compliance and other dispute..."). Categorical. L3risks likely roll up into L2Risks.
+Location: Geographic location associated with the risk/review (e.g., HONG KONG, INDIA, SINGAPORE, TAIWAN). Geographic. This seems more standardized for mapping than 'Legal Entities'.
+Goal: Analyze risk distribution, concentration, and relationships across teams, time, geography, and risk categories using advanced Power BI features.
 
-**Phase 1: Data Understanding & Preparation (Conceptual)**
+Step-by-Step Analysis Plan in Power BI:
 
-1.  **Load Data:** The data is loaded into Power BI.
-2.  **Initial Review:** Examine the columns and their meanings:
-    *   `LOD`: Level of Defense (e.g., L2C - likely Second Line of Defense Control/Compliance). Categorical.
-    *   `Team`: Specific operational or control team (e.g., DFIN/CTL). Categorical.
-    *   `Quarter`: Time period of the review/risk identification (e.g., 2025 Q1). Can be treated as Text or potentially parsed into Year/Quarter Number.
-    *   `Review_Name`: The specific audit, review, or assessment activity (e.g., HR Accounting & IFRS 2). Categorical.
-    *   `L3risks`: Detailed, specific risk description. Text/Categorical.
-    *   `Legal Entities`: This seems to represent a *location* or *branch* rather than a distinct legal entity based on the examples (SG, MUMBAI, SINGAPOUR, TAIPEÏ). We should treat it as such. Let's conceptually rename this to `Branch/Office`. Categorical.
-    *   `L2Risks`: A higher-level risk category grouping L3 risks (e.g., Compliance and other dispute with authorities). Categorical.
-    *   `Location`: Seems to represent the Country associated with the Branch/Office. Let's conceptually rename this to `Country`. Categorical.
+Step 1: Load Data into Power BI Desktop
 
-3.  **Data Transformation / Calculated Columns (Using Power Query Editor or Column Tools):**
-    *   **Rename Columns:**
-        *   Rename `Legal Entities` to `Branch/Office`.
-        *   Rename `Location` to `Country`.
-        *   *Reasoning:* Improves clarity and semantic accuracy based on the data values.
-    *   **Add `Risk Instance Count` Column:**
-        *   Create a new custom column.
-        *   Formula Logic: Assign the value `1` to every row.
-        *   *Reasoning:* This simple column is crucial for aggregation. Summing this column will give us the count of identified risk instances under various dimensions. This is a fundamental technique for counting occurrences in Power BI.
-    *   **Parse `Quarter` Column:**
-        *   Create a new column `Year`.
-        *   Logic: Extract the first 4 characters from the `Quarter` column (e.g., "2025"). Convert to Whole Number.
-        *   Create a new column `Quarter Num`.
-        *   Logic: Extract the last character from the `Quarter` column (e.g., "1"). Convert to Whole Number.
-        *   Create a new column `Quarter Text`.
-        *   Logic: Extract the last 2 characters (e.g., "Q1"). Keep as Text.
-        *   *Reasoning:* Parsing the date/time dimension allows for better filtering, sorting, and potential time-based analysis (though limited with only Q1 data). Numerical representations (`Year`, `Quarter Num`) are often better for sorting and calculations.
-    *   **Create Hierarchy:**
-        *   In the 'Fields' pane, create a new hierarchy named `Geography`.
-        *   Drag `Country` into the hierarchy (as the top level).
-        *   Drag `Branch/Office` below `Country`.
-        *   *Reasoning:* Hierarchies enable drill-down/drill-up functionality directly within visuals (like maps, matrices, bar charts), allowing users to explore data from a high level (Country) down to specifics (Branch/Office) seamlessly.
+Open Power BI Desktop.
+Get Data -> Select appropriate source (e.g., Excel, CSV, Text).
+Load the provided data into Power BI.
+Step 2: Advanced Data Handling & Transformation (Power Query Editor)
 
-**Phase 2: Data Modeling (Conceptual)**
+Rationale: While the data is "clean", we can enrich it and structure it better for advanced analysis without changing the core information. This is done in the Power Query Editor (Transform data button).
+Duplicate Columns for Different Roles:
+Duplicate the Location column. Rename the duplicate to Country. This gives us a dedicated, clean geographic column for mapping visuals. Assuming 'Location' represents the country level accurately.
+Duplicate L2Risks and L3risks if you plan to use one version for display (potentially shortened) and another for relationships or filtering. (Optional for this dataset size).
+Parse Quarter Column:
+Select the Quarter column.
+Go to Add Column tab -> Column From Examples -> From Selection.
+Type 2025 in the first row of the new column dialogue. Power Query should infer you want to extract the year. Name this column Year.
+Repeat the process: Add Column -> Column From Examples -> From Selection. Type Q1. Name this column Quarter Name.
+Advanced Handling: Create a numerical quarter for sorting. Add Column -> Conditional Column.
+Name: Quarter Number
+If Quarter Name equals Q1 then 1
+If Quarter Name equals Q2 then 2
+If Quarter Name equals Q3 then 3
+If Quarter Name equals Q4 then 4
+Else null (or 0).
+Change the data type of Year and Quarter Number to Whole Number.
+Benefit: Allows slicing by Year and Quarter independently, proper sorting of quarters, and creation of time hierarchies.
+Create Unique Identifier (Good Practice):
+Go to Add Column tab -> Index Column -> From 1.
+Name this UniqueID.
+Benefit: Ensures each row is uniquely identifiable, which can be helpful for certain complex visuals or troubleshooting, although not strictly needed for basic counts.
+Group Similar Text (Example - If L3Risks were more varied):
+Illustrative Advanced Technique (less relevant for this specific sample but good to know): If L3risks had slight variations (e.g., "Breach of Reg." vs "Regulatory Breach"), you could use:
+Add Column -> Conditional Column to group them based on keywords (Text.Contains logic available in the advanced conditional column editor or via custom columns if needed, although custom columns might veer close to query language).
+Or use Group By on L3risks and then merge back to standardize.
+For this data: The L3 risk text is consistent, so this isn't immediately necessary but demonstrates a data handling capability.
+Close & Apply: Load the transformed data into the Power BI model view.
+Step 3: Data Modeling (Minimal for this single table)
 
-*   **Relationships:** In this specific scenario with a single flat table, no complex relationships are needed *yet*. If we had separate dimension tables (e.g., a dedicated Calendar table, a Location details table, a Risk Taxonomy table), we would create relationships between them and this fact table based on common keys (like Date, Country Code, Risk ID). For now, we proceed with the single table.
+Since it's a single flat table, no complex relationships are needed yet.
+Ensure data types are correct (Text, Whole Number, etc.) in the Data view.
+Mark the Country column for geographic use: Select Country column -> Column tools tab -> Data category -> Country.
+Step 4: Implicit Measures & Basic Report Setup
 
-**Phase 3: Calculations (Implicit Measures & Basic Aggregations)**
+Power BI automatically creates implicit measures. The most useful here will be Count of UniqueID (or count of any column, like LOD Team) to represent the number of risk instances recorded.
+Set up the report canvas with a consistent theme and maybe a title.
+Step 5: Advanced Visualizations & Analysis
 
-Power BI automatically creates implicit measures when you use fields in visuals. We will leverage this without explicitly defining DAX measures.
+Focus: Using visuals that provide deeper insights or handle complexity well. We will use the implicit Count of UniqueID as our primary value, representing the number of risk records.
+Decomposition Tree (Advanced Exploration):
+Visual: Add a Decomposition Tree visual from the Visualizations pane.
+Setup:
+Analyze: Count of UniqueID (Drag UniqueID here, Power BI will default to Count).
+Explain by: Add L2Risks, Country, LOD Team, Legal Entities, Year, Quarter Name.
+Analysis: This is highly interactive. Start by clicking the '+' next to the total count. Choose L2Risks to see the breakdown. Then, click the '+' next to a specific L2 Risk category and choose Country to see where that risk type is most prevalent. Continue drilling down through different dimensions (LOD Team, Legal Entities).
+Advanced Aspect: Allows dynamic, multi-dimensional drill-down driven by the user, revealing hierarchical contributions without pre-defined paths. Excellent for root cause analysis or exploring concentrations.
+Matrix with Conditional Formatting & Hierarchy (Advanced Table):
+Visual: Add a Matrix visual.
+Setup:
+Rows: Add L2Risks, then L3risks below it (creating a hierarchy). Enable the +/- icons in Row Headers formatting.
+Columns: Add Country.
+Values: Count of UniqueID.
+Advanced Formatting:
+Select the Matrix -> Go to Format your visual -> Cell elements.
+Select Count of UniqueID in the series dropdown.
+Turn Background color ON. Click fx. Set rules (e.g., Color Scale from White to Red) based on risk count to visually highlight hotspots.
+Optionally, turn Data bars ON for another visual cue within cells.
+Optionally, turn Icons ON. Click fx. Define rules to show icons (e.g., Red circle for counts > X, Yellow for counts > Y, Green otherwise).
+Analysis: Provides a structured overview of which specific risks (L3) within broader categories (L2) are appearing in which countries. Conditional formatting immediately draws attention to high-frequency risk intersections. The hierarchy allows users to expand/collapse risk categories.
+Map Visualisation (Geographic Insight):
+Visual: Add a Map or Azure Map visual.
+Setup:
+Location: Country (the column we marked as geographic).
+Bubble size (Map) or Size (Azure Map): Count of UniqueID.
+Optional: Legend (Map) or Color > Fill Color > fx (Azure Map): Use L2Risks to color-code bubbles by risk category, or use conditional formatting on Count.
+Analysis: Visually represents the geographic concentration of risks. Larger bubbles indicate locations with more recorded risk instances. Color-coding can add another dimension (e.g., which type of risk is dominant where).
+Advanced Aspect: Geospatial analysis, leveraging the geographic data category. Azure Maps offers more advanced features like reference layers or traffic (less relevant here).
+Treemap (Proportional Analysis):
+Visual: Add a Treemap.
+Setup:
+Category: L2Risks (or L3risks for more detail).
+Values: Count of UniqueID.
+Analysis: Shows the proportion of total risks contributed by each risk category. The size of the rectangle directly represents its share of the total count. Good for quickly identifying the most frequent risk types overall.
+Advanced Aspect: Effective for visualizing part-to-whole relationships with many categories.
+Custom Tooltips (Contextual Detail):
+Create a Tooltip Page:
+Create a new report page.
+In the Format page pane -> Page information -> Turn Allow use as tooltip ON.
+Set the Page size -> Type to Tooltip.
+Add visuals to this page, e.g., a Card showing First L2Risks, another Card showing First L3risks, maybe a small Table showing counts by LOD Team for the specific data point. Filter these visuals using the fields that will be passed from the main visual (Power BI does this automatically for tooltip pages).
+Apply the Tooltip:
+Go back to your main report page. Select a visual (e.g., the Map or the Matrix).
+Go to Format visual -> General -> Tooltips.
+Set Type to Report page.
+Select your newly created tooltip page under Page.
+Analysis: When hovering over a data point (e.g., a bubble on the map, a cell in the matrix), instead of the default tooltip, your custom mini-report appears, providing much richer context without cluttering the main visual.
+Advanced Aspect: Significantly enhances data exploration by providing curated, detailed information on demand.
+Step 6: Interactivity and User Experience
 
-*   **Total Risk Count:** Achieved by using the `Risk Instance Count` column (created in Phase 1) in the 'Values' section of a visual and selecting 'Sum' as the aggregation.
-*   **Distinct Count of Risks (L2/L3):** Achieved by dragging `L2Risks` or `L3risks` into the 'Values' section and selecting 'Count (Distinct)' as the aggregation. This tells us how many unique *types* of risks exist within a category.
-*   **Distinct Count of Locations:** Achieved by dragging `Country` or `Branch/Office` to 'Values' and selecting 'Count (Distinct)'.
+Slicers: Add slicers for key dimensions: Year, Quarter Name, LOD Team, Country, L2Risks. Use the hierarchy slicer custom visual (import from AppSource) for a better experience with L2Risks/L3Risks if needed.
+Cross-Filtering: Ensure visuals interact with each other (default Power BI behaviour). Clicking on a country in the Map should filter the Matrix and Decomposition Tree, etc.
+Bookmarks & Buttons (Navigation):
+Create different views of the report focused on specific questions (e.g., Geographic View, Risk Category View, Team View) by arranging visuals and applying filters.
+Create Bookmarks (View tab -> Bookmarks) for each state. Crucially, update the bookmark to control Data, Display, and Current Page appropriately.
+Add Buttons (Insert tab -> Buttons) and assign Action -> Type: Bookmark -> Select the corresponding bookmark.
+Advanced Aspect: Creates a guided analysis path or allows users to switch between pre-defined perspectives easily, improving usability for complex reports.
+Conclusion & Insights:
 
-**Phase 4: Visualization (Demonstrating Advanced Usage)**
+By following these steps, we leverage Power BI's capabilities beyond simple charts:
 
-Here, we'll create a multi-visual report page focusing on insights derived from the calculations and data structure.
-
-1.  **Visual 1: Geographic Risk Distribution (Filled Map)**
-    *   **Type:** Filled Map.
-    *   **Location:** Drag `Country` field to the 'Location' bucket.
-    *   **Color saturation:** Drag `Risk Instance Count` to the 'Color saturation' bucket (ensure aggregation is 'Sum').
-    *   **Tooltips:** Drag `Country`, `Risk Instance Count` (Sum), `L2Risks` (Count Distinct), `Branch/Office` (Count Distinct) to the 'Tooltips' bucket.
-    *   *Insight:* Immediately shows which countries have the highest *volume* of identified risk instances (based on color intensity). Tooltips provide additional context on hover (total count, number of risk types, number of branches affected in that country).
-    *   *Advanced Aspect:* Using map visualization for spatial analysis, configuring tooltips for richer context on demand.
-
-2.  **Visual 2: Risk Category Breakdown (Treemap)**
-    *   **Type:** Treemap.
-    *   **Category:** Drag `L2Risks` to the 'Category' bucket.
-    *   **Values:** Drag `Risk Instance Count` to the 'Values' bucket (ensure 'Sum').
-    *   *Insight:* Shows the proportional contribution of each high-level risk category (`L2Risks`) to the total number of risk instances. Larger rectangles represent dominant risk categories.
-    *   *Advanced Aspect:* Treemaps are effective for visualizing part-to-whole relationships, especially with categorical data where relative size matters.
-
-3.  **Visual 3: Detailed Risk Matrix with Conditional Formatting**
-    *   **Type:** Matrix.
-    *   **Rows:** Drag the `Geography` hierarchy (containing `Country` -> `Branch/Office`) to the 'Rows' bucket. Enable drill-down by clicking the '+' icons in the matrix headers.
-    *   **Columns:** Drag `L2Risks` to the 'Columns' bucket.
-    *   **Values:** Drag `Risk Instance Count` to the 'Values' bucket (ensure 'Sum').
-    *   **Conditional Formatting:**
-        *   Select the Matrix visual. Go to the 'Format visual' pane -> 'Cell elements'.
-        *   Select `Risk Instance Count` under 'Apply settings to'.
-        *   Turn 'Background color' ON. Use a color scale (e.g., light yellow to dark red) to indicate low to high risk counts.
-        *   Optionally, turn 'Data bars' ON for another visual cue within cells.
-    *   *Insight:* Provides a detailed cross-tabulation of risk counts by location (down to the branch) and risk category. Conditional formatting instantly highlights high-risk hotspots (specific risk types in specific locations). The hierarchy allows exploration at different geographic granularities.
-    *   *Advanced Aspect:* Utilizing hierarchies for drill-down within a matrix, applying conditional formatting for visual alerting and pattern recognition.
-
-4.  **Visual 4: Key Influencers / Decomposition Tree (AI Visuals)**
-    *   **Type:** Decomposition Tree.
-    *   **Analyze:** Drag `Risk Instance Count` to the 'Analyze' bucket (ensure 'Sum').
-    *   **Explain by:** Drag `Country`, `Branch/Office`, `Team`, `L2Risks`, `L3risks`, `Review_Name` to the 'Explain by' bucket (order might influence initial view but user can explore).
-    *   *Insight:* This AI-driven visual allows users to interactively break down the total `Risk Instance Count`. Users can click dimensions (like a specific `Country` or `L2Risk`) to see how the total count decomposes across other factors. It helps understand the drivers behind high risk counts.
-    *   *Advanced Aspect:* Leveraging Power BI's AI visuals for exploratory data analysis and root cause investigation without pre-defined paths. It's highly interactive.
-
-5.  **Visual 5: Slicers for Interactivity**
-    *   **Type:** Slicer (add multiple slicers to the canvas).
-    *   **Fields:** Create separate slicers for `Year`, `Quarter Text`, `Team`, `Country`, `L2Risks`.
-    *   **Format:** Choose appropriate formats (e.g., List, Dropdown).
-    *   *Insight:* Enables users to filter the entire report dynamically. Want to see risks only for the DFIN/CTL team? Or only Compliance risks? Or risks only in INDIA? Slicers make the report interactive and tailored to specific questions.
-    *   *Advanced Aspect:* Implementing cross-report filtering to empower user-driven exploration.
-
-**Phase 5: Reporting & Interpretation**
-
-*   **Layout:** Arrange the visuals logically on the report page. Use titles and labels effectively.
-*   **Interactions:** Ensure default interactions (cross-filtering) are enabled, so clicking on a bar in one chart filters the others. For example, clicking 'INDIA' on the map should filter the Treemap and Matrix to show only data for India.
-*   **Summary:** Add text boxes to summarize key findings or guide the user. For example: "The highest concentration of risks is observed in [Country X], primarily driven by [L2Risk Y]. The matrix highlights specific concerns within the [Branch Z] office for this risk category."
-
-**Conclusion:**
-
-This step-by-step process demonstrates how to move from raw data to insightful, interactive visualizations in Power BI, acting as a Financial Data Scientist focused on risk. We utilized calculated columns for essential metrics (`Risk Instance Count`), hierarchies for drill-down (`Geography`), specific visual types suited for different analyses (Map, Treemap, Matrix, Decomposition Tree), and advanced features like conditional formatting and AI visuals. While the sample data is small, this framework illustrates powerful techniques applicable to larger, real-world financial risk datasets, enabling better understanding of risk distribution, concentration, and potential drivers without needing to expose the underlying DAX code in this explanation.
-
-
-Okay, acting as a Financial Data Scientist, let's focus solely on the calculations (conceptually) and visualizations within Power BI, assuming the data is already cleaned and structured as discussed previously.
-
-**Assumed Clean Data Structure:**
-
-| L2_Department | Quarter | Year | Quarter_Num | Quarter_Sortable | Review_Name | Risk_Category_L3 | Detailed_Risk_L3                                                    | Region/Entity | Primary_Location | Risk_Category_L2                            | Location_Country | Unique_ID |
-| :------------ | :------ | :--- | :---------- | :--------------- | :---------- | :--------------- | :------------------------------------------------------------------ | :------------ | :--------------- | :------------------------------------------ | :--------------- | :-------- |
-| L2C DFIN/CTL  | 2025 Q1 | 2025 | 1           | 2025-Q1          | HR          | Account... IFRS 2 | Breach of regulatory...                                             | SG            | HONG KONG        | Compliance... dispute...                      | HONG KONG        | 1         |
-| L2C DFIN/CTL  | 2025 Q1 | 2025 | 1           | 2025-Q1          | HR          | Account... IFRS 2 | Breach of regulatory...                                             | SG            | MUMBAI           | Compliance... dispute...                      | INDIA            | 2         |
-| L2C DFIN/CTL  | 2025 Q1 | 2025 | 1           | 2025-Q1          | HR          | Account... IFRS 2 | Breach of regulatory...                                             | SG            | SINGAPORE        | Compliance... dispute...                      | SINGAPORE        | 3         |
-| L2C DFIN/CTL  | 2025 Q1 | 2025 | 1           | 2025-Q1          | HR          | Account... IFRS 2 | Breach of regulatory...                                             | SG            | TAIPEI           | Compliance... dispute...                      | TAIWAN           | 4         |
-
-*(Includes conceptual columns like Year, Quarter_Num, Unique_ID for analysis)*
-
-**Phase 1: Calculation Concepts (Measures & Calculated Columns - No DAX Syntax)**
-
-We will leverage Power BI's ability to create implicit measures (automatic aggregations) and define concepts for more explicit measures or columns needed for advanced analysis.
-
-1.  **Core Metric - Risk Instance Count:**
-    *   **Concept:** The fundamental measure is the count of individual risk records identified.
-    *   **Calculation:** Count the number of rows or, more robustly, the distinct count of the `Unique_ID` column. Power BI does this implicitly when you use `Unique_ID` in the 'Values' field of many visuals and select 'Count' or 'Count (Distinct)'. Let's call this `Risk Count`.
-
-2.  **Dimension Uniqueness Counts:**
-    *   **Concept:** Understand the breadth of the risk landscape across key categories.
-    *   **Calculations:**
-        *   `Number of Impacted Locations`: Distinct count of `Location_Country` or `Primary_Location`.
-        *   `Number of L2 Risk Categories`: Distinct count of `Risk_Category_L2`.
-        *   `Number of L3 Risk Categories`: Distinct count of `Risk_Category_L3`.
-        *   `Number of Departments`: Distinct count of `L2_Department`.
-    *   **Power BI:** Use Card visuals, drag the respective column, and set summarization to 'Count (Distinct)'.
-
-3.  **Proportional Analysis (Conceptual - requires explicit measures usually):**
-    *   **Concept:** Understand the relative contribution of different categories to the total risk count.
-    *   **Calculations:**
-        *   `% of Total Risks by Location`: ([Risk Count for a specific Location] / [Risk Count for ALL Locations]) * 100.
-        *   `% of Total Risks by L2 Category`: ([Risk Count for a specific L2 Category] / [Risk Count for ALL L2 Categories]) * 100.
-    *   **Power BI:** While this often requires simple DAX measures, the *concept* can be visualized using visuals that show proportions like Treemaps or 100% Stacked Bar/Column charts, where Power BI handles the percentage calculation visually.
-
-4.  **Time-Based Calculations (Conceptual - requires explicit measures & date table):**
-    *   **Concept:** Analyze trends over time (though our sample is only one quarter). With more data, this is crucial.
-    *   **Calculations:**
-        *   `Risk Count Previous Quarter`: The `Risk Count` calculated for the preceding quarter.
-        *   `Quarter-over-Quarter Risk Count Change %`: The percentage difference between `Risk Count` and `Risk Count Previous Quarter`.
-    *   **Power BI:** Requires a dedicated Calendar/Date table and Time Intelligence functions (conceptually). Visualized using Line Charts or clustered charts comparing periods.
-
-**Phase 2: Advanced Visualizations and Analysis**
-
-Let's design report pages focusing on leveraging Power BI's more advanced capabilities.
-
-**Report Page 1: Risk Landscape Overview**
-
-*   **Objective:** Provide a high-level summary of the risk profile and key concentrations.
-*   **Visualizations:**
-    1.  **Cards (KPIs):**
-        *   Display `Risk Count` (Total Instances).
-        *   Display `Number of Impacted Locations` (Distinct Count of `Location_Country`).
-        *   Display `Number of L2 Risk Categories` (Distinct Count of `Risk_Category_L2`).
-        *   Display `Number of Departments` (Distinct Count of `L2_Department`).
-    2.  **Filled Map / Bubble Map (Advanced Geographic):**
-        *   **Location:** `Location_Country`.
-        *   **Bubble Size / Color Saturation:** `Risk Count` (implicit count of `Unique_ID`).
-        *   **Tooltips:** Add `Primary_Location`, `Risk_Category_L2`, `Risk_Category_L3`, `Risk Count`.
-        *   **Insight:** Immediately shows the geographic distribution and concentration of risks. Highlights countries with the highest volume. Bubble map is good if counts vary significantly; Filled Map for regional presence.
-    3.  **Treemap (Proportional Analysis):**
-        *   **Category:** `Risk_Category_L2`. (Can add `Risk_Category_L3` for drill-down).
-        *   **Values:** `Risk Count`.
-        *   **Insight:** Visually represents the proportion of total risks attributed to each L2 category. Larger rectangles indicate dominant risk types. In our sample, it would show 100% for "Compliance...".
-    4.  **Slicers:**
-        *   Include slicers for `Quarter_Sortable`, `Location_Country`, `L2_Department`. Allows interactive filtering of the entire page.
-
-**Report Page 2: Deep Dive Analysis (Interactive Exploration)**
-
-*   **Objective:** Allow users to explore relationships and drill down into specific risk drivers.
-*   **Visualizations:**
-    1.  **Decomposition Tree (Advanced AI Visual):**
-        *   **Analyze:** `Risk Count`.
-        *   **Explain By:** Add dimensions in likely order of exploration: `L2_Department`, `Risk_Category_L2`, `Risk_Category_L3`, `Location_Country`, `Primary_Location`, `Review_Name`.
-        *   **Insight:** This is the star for exploration. Users can click through different paths (e.g., start with Department -> L2 Risk -> Location) to see how the total risk count breaks down. AI features can suggest interesting splits. For the sample, it would show a simple path, but with real data, it reveals complex interactions.
-    2.  **Matrix with Conditional Formatting (Advanced Cross-Tabulation):**
-        *   **Rows:** Use a hierarchy: `Risk_Category_L2` -> `Risk_Category_L3`.
-        *   **Columns:** Use a hierarchy: `Location_Country` -> `Primary_Location`.
-        *   **Values:** `Risk Count`.
-        *   **Conditional Formatting:** Apply 'Background color scales' (Heatmap) to the `Risk Count` values. Darker colors indicate higher risk counts.
-        *   **Insight:** Creates a heatmap showing hotspots – combinations of Risk Categories and Locations with high frequencies. Excellent for identifying systemic issues vs. localized ones.
-    3.  **Table (Detailed View):**
-        *   **Columns:** `Detailed_Risk_L3`, `Primary_Location`, `Location_Country`, `Review_Name`, `Quarter_Sortable`.
-        *   **Function:** Acts as a detail view that gets filtered when users interact with the Decomposition Tree, Map, or Matrix. Provides the granular text and context for selected risk instances.
-
-**Report Page 3: (Optional - If Text Varies) Risk Theme Analysis**
-
-*   **Objective:** Identify recurring themes or keywords within the detailed risk descriptions.
-*   **Visualizations:**
-    1.  **Word Cloud (Custom Visual):**
-        *   **Category:** `Detailed_Risk_L3` (or potentially combine L3 and Detailed L3).
-        *   **Values:** `Risk Count`.
-        *   **Insight:** If the `Detailed_Risk_L3` descriptions had more variation, this visual would highlight the most frequently occurring words or short phrases, potentially revealing underlying themes not captured by the L2/L3 categories alone. *Requires importing the visual from AppSource.*
-    2.  **Filtered Table:** A table showing the full `Detailed_Risk_L3` descriptions, filtered by selections in other visuals or slicers.
-
-**Interactivity Strategy:**
-
-*   **Cross-Filtering:** Ensure visuals on the same page interact (clicking a country on the map filters the matrix and decomposition tree, etc.). This is default but crucial.
-*   **Slicers:** Provide global filters (like Quarter/Year) that affect multiple pages or targeted filters on specific pages.
-*   **Drill-Through:** Could set up drill-through from the Overview map/treemap to the Deep Dive page, passing the selected context (e.g., drill through from a specific L2 Risk Category).
-*   **Tooltips:** Customize tooltips on the Map, Treemap, and Matrix to show relevant additional details on hover without cluttering the main visual. Could even use *report page tooltips* for mini-dashboards on hover.
-
-**Insights from Sample Data using these Visuals:**
-
-1.  **Map:** Would show markers/color intensity equally across Hong Kong, India, Singapore, Taiwan, indicating the risk appeared in all these locations in 2025 Q1.
-2.  **Treemap:** Would be a single rectangle for "Compliance and other dispute with authorities", occupying 100% of the area.
-3.  **Decomposition Tree:** Would show a simple split: Total (4) -> L2C DFIN/CTL (4) -> Compliance... (4) -> Breach of regulatory... (4) -> then splitting evenly by Location (1 each).
-4.  **Matrix:** Would show a '1' in the cells corresponding to the single L2/L3 risk combination for each of the four locations. The heatmap (if scaled automatically) might show all these cells in the same color.
-
-This plan leverages standard and advanced Power BI features to move beyond simple reporting towards interactive exploration and insight generation, even with limited initial data variety. The techniques scale effectively as more diverse and voluminous data becomes available.
+Power Query: Used for essential data shaping (parsing time, ensuring geographic compatibility) without complex coding.
+Advanced Visuals: Decomposition Tree for dynamic exploration, Matrix with conditional formatting for highlighting hotspots, Maps for geographic context, Treemaps for proportions.
+Enhanced Interactivity: Custom Tooltips provide deep context on hover, Bookmarks create curated analytical views.
+This approach allows a Financial Data Scientist to present an insightful analysis of risk data, highlighting concentrations, distributions, and relationships across various dimensions, facilitating data-driven discussions on risk management priorities and resource allocation, all within the Power BI environment and adhering to the no-DAX constraint. The analysis focuses on how and where risks are occurring, broken down by category and team.
