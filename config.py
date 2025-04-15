@@ -1,0 +1,3 @@
+# config.py
+# Store your OpenAI API key here
+OPENAI_API_KEY = "your-openai-api-key-here" 
